@@ -24,9 +24,12 @@ import com.example.barberbookingapp.Adapter.HomeSliderAdapter;
 import com.example.barberbookingapp.Adapter.LookbookAdapter;
 import com.example.barberbookingapp.BookingActivity;
 import com.example.barberbookingapp.Common.Common;
+import com.example.barberbookingapp.Database.CartDatabase;
+import com.example.barberbookingapp.Database.DatabaseUtils;
 import com.example.barberbookingapp.Interface.IBannerLoadListener;
 import com.example.barberbookingapp.Interface.IBookingInfoLoadListener;
 import com.example.barberbookingapp.Interface.IBookingInformationChangeListener;
+import com.example.barberbookingapp.Interface.ICountItemInCartListener;
 import com.example.barberbookingapp.Interface.ILookbookLoadListener;
 import com.example.barberbookingapp.Model.Banner;
 import com.example.barberbookingapp.Model.BookingInformation;
@@ -43,6 +46,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.nex3z.notificationbadge.NotificationBadge;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -56,9 +60,14 @@ import dmax.dialog.SpotsDialog;
 import io.paperdb.Paper;
 import ss.com.bannerslider.Slider;
 
-public class HomeFragment extends Fragment implements IBannerLoadListener, ILookbookLoadListener, IBookingInfoLoadListener, IBookingInformationChangeListener {
+public class HomeFragment extends Fragment implements IBannerLoadListener, ILookbookLoadListener, IBookingInfoLoadListener, IBookingInformationChangeListener, ICountItemInCartListener {
 
     AlertDialog dialog;
+
+    CartDatabase cartDatabase;
+
+    @BindView(R.id.notification_badge)
+    NotificationBadge notificationBadge;
 
     @BindView(R.id.layout_user_information)
     LinearLayout layout_user_information;
@@ -199,6 +208,7 @@ public class HomeFragment extends Fragment implements IBannerLoadListener, ILook
     public void onResume() {
         super.onResume();
         loadUserBooking();
+        countCartItem();
     }
 
     private void loadUserBooking() {
@@ -258,6 +268,8 @@ public class HomeFragment extends Fragment implements IBannerLoadListener, ILook
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         unbinder = ButterKnife.bind(this,view);
 
+        cartDatabase = CartDatabase.getInstance(getContext());
+
         Slider.init(new PicassoImageLoadingService());
 
         iBannerLoadListener = this;
@@ -270,8 +282,13 @@ public class HomeFragment extends Fragment implements IBannerLoadListener, ILook
             loadBanner();
             loadLookBook();
             loadUserBooking();
+            countCartItem();
         }
         return view;
+    }
+
+    private void countCartItem() {
+        DatabaseUtils.countItemInCart(cartDatabase,this);
     }
 
     private void loadLookBook() {
@@ -382,5 +399,10 @@ public class HomeFragment extends Fragment implements IBannerLoadListener, ILook
     @Override
     public void onBookingInformationChange() {
         startActivity(new Intent(getActivity(),BookingActivity.class));
+    }
+
+    @Override
+    public void onCartItemCountSuccess(int count) {
+        notificationBadge.setText(String.valueOf(count));
     }
 }

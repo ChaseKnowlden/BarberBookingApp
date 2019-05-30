@@ -1,10 +1,18 @@
 package com.example.barberbookingapp.Model;
 
 public class ShoppingItem {
-    private String name,image;
+    private String id,name,image;
     private Long price;
 
     public ShoppingItem() {
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
