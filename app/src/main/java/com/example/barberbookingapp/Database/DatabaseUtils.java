@@ -5,17 +5,29 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.example.barberbookingapp.Common.Common;
+import com.example.barberbookingapp.Interface.ICartItemLoadListener;
 import com.example.barberbookingapp.Interface.ICountItemInCartListener;
+import com.example.barberbookingapp.Interface.ISumCartListener;
 
 import java.util.List;
 
 public class DatabaseUtils {
 
     // Because all room handle need work on other thread
+    public static void getAllCart(CartDatabase db, ICartItemLoadListener cartItemLoadListener)
+    {
+        GetAllCartAsync task = new GetAllCartAsync(db,cartItemLoadListener);
+        task.execute();
+    }
 
-    public static void getAllCart(CartDatabase db) {
-        GetAllCartAsync task = new GetAllCartAsync(db);
-        task.execute(Common.currentUser.getPhoneNumber());
+    public static void sumCart(CartDatabase db, ISumCartListener iSumCartListener) {
+        SumCartAsync task = new SumCartAsync(db, iSumCartListener);
+        task.execute();
+    }
+
+    public static void updateCart(CartDatabase db, CartItem cartItem) {
+        UpdateCartAsync task = new UpdateCartAsync(db);
+        task.execute(cartItem);
     }
 
     public static void insertToCart(CartDatabase db, CartItem... cartItems) {
@@ -34,24 +46,61 @@ public class DatabaseUtils {
     ============================================================================
      */
 
+    private static class SumCartAsync extends AsyncTask<Void, Void, Long> {
 
-    private static class GetAllCartAsync extends AsyncTask<String, Void, Void> {
+        private final CartDatabase db;
+        private final ISumCartListener listener;
 
-        CartDatabase db;
-
-        public GetAllCartAsync(CartDatabase cartDatabase) {
-            db = cartDatabase;
+        public SumCartAsync(CartDatabase db, ISumCartListener listener) {
+            this.db = db;
+            this.listener = listener;
         }
 
         @Override
-        protected Void doInBackground(String... strings) {
-            getAllItemFromCartByUserPhone(db,strings[0]);
-            return null;
+        protected Long doInBackground(Void... voids) {
+            return db.cartDAO().sumPrice(Common.currentUser.getPhoneNumber());
         }
 
-        private void getAllItemFromCartByUserPhone(CartDatabase db, String userPhone) {
-            List<CartItem> cartItems = db.cartDao().getAllItemFromCart(userPhone);
-            Log.d("COUNT_CART",""+cartItems.size());
+        @Override
+        protected void onPostExecute(Long aLong) {
+            super.onPostExecute(aLong);
+            listener.onSumCartSuccess(aLong);
+        }
+    }
+
+    private static class GetAllCartAsync extends AsyncTask<String, Void,List<CartItem>> {
+
+        CartDatabase db;
+        ICartItemLoadListener listener;
+        public GetAllCartAsync(CartDatabase cartDatabase, ICartItemLoadListener iCartItemLoadListener) {
+            db = cartDatabase;
+            listener = iCartItemLoadListener;
+        }
+
+        @Override
+        protected List<CartItem> doInBackground(String... strings) {
+            return db.cartDAO().getAllItemFromCart(Common.currentUser.getPhoneNumber());
+        }
+
+        @Override
+        protected void onPostExecute(List<CartItem> cartItems) {
+            super.onPostExecute(cartItems);
+            listener.onGetAllItemCartLoadSuccess(cartItems);
+        }
+    }
+
+    private static class UpdateCartAsync extends AsyncTask<CartItem, Void, Void> {
+
+        private final CartDatabase db;
+
+        public UpdateCartAsync(CartDatabase db) {
+            this.db = db;
+        }
+
+        @Override
+        protected Void doInBackground(CartItem... cartItems) {
+            db.cartDAO().update(cartItems[0]);
+            return null;
         }
     }
 
@@ -70,13 +119,13 @@ public class DatabaseUtils {
 
         private void inserToCart(CartDatabase db, CartItem cartItem) {
             try {
-                db.cartDao().insert(cartItem);
+                db.cartDAO().insert(cartItem);
             } catch (SQLiteConstraintException exception)
             {
-                CartItem updateItemCart = db.cartDao().getProductInCart(cartItem.getProductId(),
+                CartItem updateItemCart = db.cartDAO().getProductInCart(cartItem.getProductId(),
                         Common.currentUser.getPhoneNumber());
                 updateItemCart.setProductQuantity(updateItemCart.getProductQuantity() + 1);
-                db.cartDao().update(updateItemCart);
+                db.cartDAO().update(updateItemCart);
             }
         }
     }
@@ -105,7 +154,7 @@ public class DatabaseUtils {
         }
 
         private int countItemInCartRun(CartDatabase db) {
-            return db.cartDao().countItemInCart(Common.currentUser.getPhoneNumber());
+            return db.cartDAO().countItemInCart(Common.currentUser.getPhoneNumber());
         }
     }
 

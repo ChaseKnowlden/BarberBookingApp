@@ -9,7 +9,7 @@ import android.content.Context;
 public abstract class CartDatabase extends RoomDatabase {
     private static CartDatabase instance;
 
-    public abstract CartDAO cartDao();
+    public abstract CartDAO cartDAO();
 
     public static CartDatabase getInstance(Context context) {
         if (instance == null)

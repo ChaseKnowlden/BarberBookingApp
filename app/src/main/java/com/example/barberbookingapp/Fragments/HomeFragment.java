@@ -23,6 +23,7 @@ import android.widget.Toast;
 import com.example.barberbookingapp.Adapter.HomeSliderAdapter;
 import com.example.barberbookingapp.Adapter.LookbookAdapter;
 import com.example.barberbookingapp.BookingActivity;
+import com.example.barberbookingapp.CartActivity;
 import com.example.barberbookingapp.Common.Common;
 import com.example.barberbookingapp.Database.CartDatabase;
 import com.example.barberbookingapp.Database.DatabaseUtils;
@@ -188,6 +189,11 @@ public class HomeFragment extends Fragment implements IBannerLoadListener, ILook
     void booking()
     {
         startActivity(new Intent(getActivity(), BookingActivity.class));
+    }
+
+    @OnClick(R.id.card_view_cart)
+    void openCartActivity(){
+        startActivity(new Intent(getActivity(), CartActivity.class));
     }
 
     CollectionReference bannerRef,lookbookRef;
